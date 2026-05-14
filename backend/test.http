@@ -1,0 +1,80 @@
+@authToken = f5bc59100a088773c3429972f53147fb860cf3dcc0019fa00c75bf37386bf784
+@access_token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2YTA0YjU0MGFiNjcwNjdiYmM0MGQyMzAiLCJ1c2VybmFtZSI6Im1pc2hrYSIsImlhdCI6MTc3ODcwMDQwMCwiZXhwIjoxNzc5MzA1MjAwfQ.vbxoZbGeKL0IsL6g_imuBXZRXdf_Pl7Ez-rMoqIPbiw
+@postId = 6a04ce806a4757af6871085e
+### Health check
+GET http://localhost:5000/api
+
+### Register
+POST http://localhost:5000/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "mishka",
+  "displayName": "Mishka",
+  "email": "mishka@test.com",
+  "password": "password123"
+}
+
+### Login
+POST http://localhost:5000/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "mishka@test.com",
+  "password": "password123"
+}
+
+### Verify email (paste token from server console log)
+GET http://localhost:5000/api/auth/verify?token={{authToken}}
+
+### Forgot password
+POST http://localhost:5000/api/auth/forgot-password
+Content-Type: application/json
+
+{
+  "email": "mishka@test.com"
+}
+
+### Reset password (paste token from server console log)
+POST http://localhost:5000/api/auth/reset-password
+Content-Type: application/json
+
+{
+  "token": "e053804152758f3dbf8a63066adf9c0cbb0923e1c440400d86799a0e6b50e0c0",
+  "password": "newpassword123"
+}
+
+### Create post
+POST http://localhost:5000/api/posts
+Content-Type: application/json
+Authorization: Bearer {{access_token}}
+
+{
+  "text": "This is the body of my first post."
+}
+
+### Get feed
+GET http://localhost:5000/api/posts/feed
+Authorization: Bearer {{access_token}}
+### Get my posts - ALL
+GET http://localhost:5000/api/posts/me
+Authorization: Bearer {{access_token}}
+### Search feed
+GET http://localhost:5000/api/posts/feed?search=first
+Authorization: Bearer {{access_token}}
+
+### Like / unlike post
+POST http://localhost:5000/api/posts/{{postId}}/like
+Authorization: Bearer {{access_token}}
+
+### Delete post
+DELETE http://localhost:5000/api/posts/{{postId}}
+Authorization: Bearer {{access_token}}
+
+### Get liked posts
+GET http://localhost:5000/api/posts/liked
+Authorization: Bearer {{access_token}}
+
+### Unlike post
+POST http://localhost:5000/api/posts/{{postId}}/like
+Authorization: Bearer {{access_token}}
