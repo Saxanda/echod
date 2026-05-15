@@ -1,8 +1,14 @@
 import {
-    Body, Get, HttpCode, JsonController,
-    Post, QueryParam, Req, UnauthorizedError,
+    Body,
+    Get,
+    HttpCode,
+    JsonController,
+    Post,
+    QueryParam,
+    Req,
+    UnauthorizedError,
 } from "routing-controllers";
-import { Service } from "typedi";
+import { Service, Container } from "typedi";
 import { Request } from "express";
 import { AuthService } from "../services/authService";
 import { ForgotPasswordDto, LoginDto, RegisterDto } from "../dto/auth.dto";
@@ -10,7 +16,7 @@ import { ForgotPasswordDto, LoginDto, RegisterDto } from "../dto/auth.dto";
 @JsonController("/auth")
 @Service()
 export class AuthController {
-    constructor(private authService: AuthService) {}
+    private authService = Container.get(AuthService);
 
     @Post("/register")
     @HttpCode(201)
@@ -43,7 +49,7 @@ export class AuthController {
     @Post("/reset-password")
     resetPassword(
         @Body("token") token: string,
-        @Body("password") password: string,
+        @Body("password") password: string
     ) {
         return this.authService.resetPassword(token, password);
     }

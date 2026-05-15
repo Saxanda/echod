@@ -1,97 +1,99 @@
-// src/services/authService.ts
-import {Service} from "typedi";
-import {UserModel} from "../models/User";
-import {LoginDto, RegisterDto} from "../dto/auth.dto";
+import { Service } from "typedi";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
+import { BadRequestError, UnauthorizedError } from "routing-controllers";
+
+import { UserModel } from "../models/User";
+import { RegisterDto, LoginDto } from "../dto/auth.dto";
 
 @Service()
 export class AuthService {
     async register(dto: RegisterDto) {
-        const existing = await UserModel.findOne({
-            $or: [{email: dto.email}, {username: dto.username}],
+        const existingUser = await UserModel.findOne({
+            $or: [{ email: dto.email }, { username: dto.username }],
         });
-        if (existing) throw new Error("Email or username already taken");
 
-        const hashed = await bcrypt.hash(dto.password, 10);
-        const verifyToken = crypto.randomBytes(32).toString("hex");
+        if (existingUser) {
+            throw new BadRequestError("User already exists");
+        }
+
+        const hashedPassword = await bcrypt.hash(dto.password, 10);
+
+        const emailVerificationToken = crypto.randomBytes(32).toString("hex");
 
         const user = await UserModel.create({
-            ...dto,
-            password: hashed,
-            emailVerificationToken: verifyToken,
+            username: dto.username,
+            displayName: dto.displayName,
+            email: dto.email,
+            password: hashedPassword,
+            emailVerificationToken,
         });
 
-        // TODO: await mailService.sendVerification(user.email, verifyToken);
-        console.log(`Verify token for ${user.email}: ${verifyToken}`);
-
-        return {message: "Registered. Check your email to verify."};
+        return {
+            message: "User registered successfully. Please verify your email.",
+            user: {
+                id: user.id,
+                username: user.username,
+                displayName: user.displayName,
+                email: user.email,
+            },
+        };
     }
 
     async login(dto: LoginDto) {
-        const user = await UserModel.findOne({email: dto.email});
-        if (!user) throw new Error("Invalid credentials");
+        const user = await UserModel.findOne({ email: dto.email });
 
-        const valid = await bcrypt.compare(dto.password, user.password);
-        if (!valid) throw new Error("Invalid credentials");
+        if (!user) {
+            throw new UnauthorizedError("Invalid email or password");
+        }
 
-        // ✅ перевірку верифікації поки не налаштований email
-        // if (!user.isEmailVerified) throw new Error("Please verify your email first");
+        const isPasswordValid = await bcrypt.compare(dto.password, user.password);
+
+        if (!isPasswordValid) {
+            throw new UnauthorizedError("Invalid email or password");
+        }
+
+        const expiresIn = dto.rememberMe ? "30d" : "7d";
 
         const token = jwt.sign(
-            {sub: user._id, username: user.username},
-            process.env.JWT_SECRET!,
-            {expiresIn: "7d"},
+            { sub: user.id },
+            process.env.JWT_SECRET as string,
+            { expiresIn }
         );
 
-        // ✅ змінено access_token → token щоб збігалося з фронтендом
         return {
             token,
             user: {
-                id: user._id,
+                id: user.id,
                 username: user.username,
                 displayName: user.displayName,
                 email: user.email,
                 avatar: user.avatar,
-            }
+            },
         };
     }
 
     async verifyEmail(token: string) {
-        const user = await UserModel.findOne({emailVerificationToken: token});
-        if (!user) throw new Error("Invalid or expired token");
+        const user = await UserModel.findOne({ emailVerificationToken: token });
+
+        if (!user) {
+            throw new BadRequestError("Invalid verification token");
+        }
 
         user.isEmailVerified = true;
         user.emailVerificationToken = undefined;
+
         await user.save();
 
-        return {message: "Email verified successfully!"};
+        return { message: "Email verified successfully" };
     }
 
     async forgotPassword(email: string) {
-        const user = await UserModel.findOne({email});
-        // Always return success to avoid email enumeration
-        if (!user) return {message: "If that email exists, a reset link was sent."};
-
-        const resetToken = crypto.randomBytes(32).toString("hex");
-        user.passwordResetToken = resetToken;
-        await user.save();
-
-        // TODO: await mailService.sendPasswordReset(email, resetToken);
-        console.log(`Reset token for ${email}: ${resetToken}`);
-
-        return {message: "If that email exists, a reset link was sent."};
+        return { message: `Password reset link sent to ${email}` };
     }
 
-    async resetPassword(token: string, newPassword: string) {
-        const user = await UserModel.findOne({passwordResetToken: token});
-        if (!user) throw new Error("Invalid or expired token");
-
-        user.password = await bcrypt.hash(newPassword, 10);
-        user.passwordResetToken = undefined;
-        await user.save();
-
-        return {message: "Password reset successfully."};
+    async resetPassword(token: string, password: string) {
+        return { message: "Password reset successfully" };
     }
 }

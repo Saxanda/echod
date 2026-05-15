@@ -1,63 +1,44 @@
-import {
-    getModelForClass,
-    prop,
-} from "@typegoose/typegoose";
+import { getModelForClass, prop } from "@typegoose/typegoose";
 
 export class User {
-    @prop({
-        required: true,
-        unique: true,
-    })
+    @prop({ type: () => String, required: true, unique: true })
     public username!: string;
 
-    @prop({
-        required: true,
-    })
+    @prop({ type: () => String, required: true })
     public displayName!: string;
 
-    @prop({
-        required: true,
-        unique: true,
-    })
+    @prop({ type: () => String, required: true, unique: true })
     public email!: string;
 
-    @prop({
-        required: true,
-    })
+    @prop({ type: () => String, required: true })
     public password!: string;
 
-    @prop({
-        default: "",
-    })
+    @prop({ type: () => String, default: "" })
     public avatar!: string;
 
-    @prop({
-        default: "",
-    })
+    @prop({ type: () => String, default: "" })
     public headerImage!: string;
 
-    @prop({
-        default: "",
-    })
+    @prop({ type: () => String, default: "" })
     public bio!: string;
 
-    @prop({
-        default: false,
-    })
+    @prop({ type: () => Boolean, default: false })
     public isEmailVerified!: boolean;
 
-    @prop()
+    @prop({ type: () => String })
     public emailVerificationToken?: string;
 
-    @prop()
+    @prop({ type: () => String })
     public passwordResetToken?: string;
 
-    @prop()
+    @prop({ type: () => Date })
+    public passwordResetExpires?: Date;
+
+    @prop({ type: () => String })
     public googleId?: string;
 
-    @prop({ default: Date.now })
+    @prop({ type: () => Date, default: Date.now })
     public createdAt!: Date;
 }
 
-export const UserModel =
-    getModelForClass(User);
+export const UserModel = getModelForClass(User);
