@@ -12,7 +12,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "module",
+
   "dependencies": {
     "@nestjs/common": "^11.1.19",
     "@nestjs/websockets": "^11.1.19",

@@ -1,24 +1,24 @@
-// services/postService.ts
-import {Service} from "typedi";
-import {PostModel} from "../models/Post";
-import {FollowModel} from "../models/Follow";
-import {AppGateway} from "../gateway/appGateway";
+import { Service } from "typedi";
+import { PostModel } from "../models/Post";
+import { FollowModel } from "../models/Follow";
+import { AppGateway } from "../gateway/appGateway";
+import { Types } from "mongoose";
 
 @Service()
 export class PostService {
-    constructor(private gateway: AppGateway) {
-    }
+    constructor(private gateway: AppGateway) {}
 
-    // Feed: posts from people the user follows
     async getFeed(userId: string, search?: string) {
-        const follows = await FollowModel.find({follower: userId}).lean();
+        const follows = await FollowModel.find({
+            follower: new Types.ObjectId(userId)
+        }).lean();
         const followingIds = follows.map((f) => f.following);
 
-        const query: any = {author: {$in: followingIds}};
-        if (search) query.text = {$regex: search, $options: "i"};
+        const query: any = { author: { $in: followingIds } };
+        if (search) query.text = { $regex: search, $options: "i" };
 
         return PostModel.find(query)
-            .sort({createdAt: -1})
+            .sort({ createdAt: -1 })
             .populate("author", "username displayName avatar")
             .lean();
     }
@@ -26,16 +26,17 @@ export class PostService {
     async create(userId: string, text: string, imageUrl?: string) {
         const post = await PostModel.create({
             text,
-            author: userId,
+            author: new Types.ObjectId(userId),  // ✅
             image: imageUrl ?? "",
         });
 
-        const populated = await PostModel.findById(post._id)
-            .populate("author", "username displayName avatar");
-            // .lean();
+        const populated = await PostModel.findById(post._id)  // ✅ post існує після create
+            .populate("author", "username displayName avatar")
+            .lean();
 
-        // Notify followers via Socket.io
-        const followers = await FollowModel.find({following: userId}).lean();
+        const followers = await FollowModel.find({
+            following: new Types.ObjectId(userId)
+        }).lean();
         const followerIds = followers.map((f) => String(f.follower));
         this.gateway.notifyFollowers(followerIds, populated);
 
@@ -43,8 +44,8 @@ export class PostService {
     }
 
     async getMyPosts(userId: string) {
-        return PostModel.find({author: userId})
-            .sort({createdAt: -1})
+        return PostModel.find({ author: new Types.ObjectId(userId) })
+            .sort({ createdAt: -1 })
             .populate("author", "username displayName avatar")
             .lean();
     }
@@ -54,30 +55,28 @@ export class PostService {
         if (!post) throw new Error("Post not found");
         if (String(post.author) !== userId) throw new Error("Unauthorized");
         await post.deleteOne();
-        return {success: true};
+        return { success: true };
     }
 
     async toggleLike(userId: string, postId: string) {
         const post = await PostModel.findById(postId);
         if (!post) throw new Error("Post not found");
 
-        const alreadyLiked = post.likes.some(
-            (id) => String(id) === userId
-        );
+        const alreadyLiked = post.likes.some((id) => String(id) === userId);
 
         if (alreadyLiked) {
             post.likes = post.likes.filter((id) => String(id) !== userId);
         } else {
-            post.likes.push(userId as any);
+            post.likes.push(new Types.ObjectId(userId) as any);
         }
 
         await post.save();
-        return {liked: !alreadyLiked, likesCount: post.likes.length};
+        return { liked: !alreadyLiked, likesCount: post.likes.length };
     }
 
     async getLikedPosts(userId: string) {
-        return PostModel.find({likes: userId})
-            .sort({createdAt: -1})
+        return PostModel.find({ likes: new Types.ObjectId(userId) })
+            .sort({ createdAt: -1 })
             .populate("author", "username displayName avatar")
             .lean();
     }

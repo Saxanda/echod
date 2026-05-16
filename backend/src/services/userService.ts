@@ -3,6 +3,7 @@ import { Service } from "typedi";
 import { UserModel } from "../models/User";
 import { FollowModel } from "../models/Follow";
 import { UpdateProfileDto } from "../dto/user.dto";
+import { Types } from "mongoose";
 
 @Service()
 export class UserService {
@@ -22,7 +23,10 @@ export class UserService {
         const [followersCount, followingCount, isFollowing] = await Promise.all([
             FollowModel.countDocuments({ following: user._id }),
             FollowModel.countDocuments({ follower: user._id }),
-            FollowModel.exists({ follower: currentUserId, following: user._id }),
+            FollowModel.exists({
+                follower: new Types.ObjectId(currentUserId),
+                following: user._id,
+            }),
         ]);
 
         return { ...user, followersCount, followingCount, isFollowing: !!isFollowing };
@@ -35,7 +39,7 @@ export class UserService {
                 { username: { $regex: query, $options: "i" } },
                 { displayName: { $regex: query, $options: "i" } },
             ],
-            _id: { $ne: currentUserId },
+            _id: { $ne: new Types.ObjectId(currentUserId) },
         })
             .select("username displayName avatar")
             .limit(10)
@@ -57,8 +61,8 @@ export class UserService {
         if (followerId === followingId) throw new Error("Cannot follow yourself");
 
         const existing = await FollowModel.findOne({
-            follower: followerId,
-            following: followingId,
+            follower: new Types.ObjectId(followerId),
+            following: new Types.ObjectId(followingId),
         });
 
         if (existing) {
@@ -66,18 +70,21 @@ export class UserService {
             return { following: false };
         }
 
-        await FollowModel.create({ follower: followerId, following: followingId });
+        await FollowModel.create({
+            follower: new Types.ObjectId(followerId),
+            following: new Types.ObjectId(followingId),
+        });
         return { following: true };
     }
 
     async getFollowers(userId: string) {
-        return FollowModel.find({ following: userId })
+        return FollowModel.find({ following: new Types.ObjectId(userId) })
             .populate("follower", "username displayName avatar")
             .lean();
     }
 
     async getFollowing(userId: string) {
-        return FollowModel.find({ follower: userId })
+        return FollowModel.find({ follower: new Types.ObjectId(userId) })
             .populate("following", "username displayName avatar")
             .lean();
     }

@@ -2,13 +2,13 @@
 import {
     JsonController, Get, Put, Delete,
     Param, Body, QueryParam,
-    HttpCode, UseInterceptors, UploadedFile,
+    HttpCode, UseInterceptor, UploadedFile,
 } from "routing-controllers";
 import { Service } from "typedi";
-import { UserService } from "../services/userService";
-import { CurrentUser } from "../decorators/currentUser";
-import { UpdateProfileDto } from "../dto/user.dto";
-import { User } from "../models/User";
+import { UserService } from "../services/userService.js";
+import { CurrentUser } from "../decorators/currentUser.js";
+import { UpdateProfileDto } from "../dto/user.dto.js";
+import { User } from "../models/User.js";
 
 @JsonController("/users")
 @Service()

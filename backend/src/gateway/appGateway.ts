@@ -4,7 +4,7 @@ import { Server, Socket } from "socket.io";
 
 @Service()
 export class AppGateway {
-    private server: Server;
+    private server!: Server;
 
     init(server: Server) {
         this.server = server;
