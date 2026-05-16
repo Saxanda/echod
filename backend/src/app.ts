@@ -1,13 +1,14 @@
+// src/app.ts
 import "reflect-metadata";
 import express from "express";
 import cors from "cors";
 import { useExpressServer, useContainer } from "routing-controllers";
 import { Container } from "typedi";
 import cookieParser from "cookie-parser";
-import { AuthController } from "./controllers/authController.js";
-import { AuthMiddleware } from "./middleware/authMiddleware.js";
-import { PostController } from "./controllers/postController.js";
-import { UserController } from "./controllers/userController.js";
+import { AuthController } from "./controllers/authController";
+import { AuthMiddleware } from "./middleware/authMiddleware";
+import { PostController } from "./controllers/postController";
+import { UserController } from "./controllers/userController";
 
 useContainer(Container);
 

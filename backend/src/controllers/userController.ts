@@ -1,24 +1,30 @@
 // src/controllers/userController.ts
-import {
-    JsonController, Get, Put, Delete,
-    Param, Body, QueryParam,
-    HttpCode, UseInterceptor, UploadedFile,
-} from "routing-controllers";
-import { Service } from "typedi";
-import { UserService } from "../services/userService.js";
-import { CurrentUser } from "../decorators/currentUser.js";
-import { UpdateProfileDto } from "../dto/user.dto.js";
-import { User } from "../models/User.js";
+import {Body, Get, JsonController, Param, Put, QueryParam,} from "routing-controllers";
+import {Service} from "typedi";
+import {UserService} from "../services/userService";
+import {CurrentUser} from "../decorators/currentUser";
+import {UpdateProfileDto} from "../dto/user.dto";
+import {User} from "../models/User";
 
 @JsonController("/users")
 @Service()
 export class UserController {
+
     constructor(private userService: UserService) {}
 
     // GET /api/users/me
     @Get("/me")
     getMe(@CurrentUser() user: User) {
         return this.userService.findById(String((user as any)._id));
+    }
+
+    // GET /api/users/search?q=...  ← має бути ДО /:username
+    @Get("/search")
+    searchUsers(
+        @QueryParam("q") q: string,
+        @CurrentUser() user: User,
+    ) {
+        return this.userService.search(q, String((user as any)._id));
     }
 
     // GET /api/users/:username
@@ -33,15 +39,6 @@ export class UserController {
         );
     }
 
-    // GET /api/users/search?q=...
-    @Get("/search")
-    searchUsers(
-        @QueryParam("q") q: string,
-        @CurrentUser() user: User,
-    ) {
-        return this.userService.search(q, String((user as any)._id));
-    }
-
     // PUT /api/users/me
     @Put("/me")
     updateProfile(
@@ -54,7 +51,7 @@ export class UserController {
         );
     }
 
-    // POST /api/users/:id/follow
+    // PUT /api/users/:id/follow
     @Put("/:id/follow")
     toggleFollow(
         @CurrentUser() user: User,

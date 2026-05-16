@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "tsx watch src/server.ts",
+    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "test": "node --test test/*.test.js"
@@ -12,7 +12,6 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-
   "dependencies": {
     "@nestjs/common": "^11.1.19",
     "@nestjs/websockets": "^11.1.19",
@@ -27,6 +26,7 @@
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.6.2",
+    "multer": "^2.1.1",
     "reflect-metadata": "^0.2.2",
     "routing-controllers": "^0.11.3",
     "socket.io": "^4.8.3",
@@ -39,10 +39,10 @@
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/mongoose": "^5.11.96",
+    "@types/multer": "^2.1.0",
     "@types/node": "^25.6.2",
     "nodemon": "^3.1.14",
     "ts-node-dev": "^2.0.0",
-    "tsx": "^4.22.0",
     "typescript": "^6.0.3"
   }
 }

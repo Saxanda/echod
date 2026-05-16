@@ -1,3 +1,4 @@
+// backend/src/controllers/authController.ts
 import {
     Body,
     Get,
