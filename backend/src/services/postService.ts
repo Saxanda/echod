@@ -1,6 +1,7 @@
 // backend/src/services/postService.ts
 import {Service} from "typedi";
 import {PostModel} from "../models/Post";
+import { UserModel } from "../models/User";
 import {FollowModel} from "../models/Follow";
 import {AppGateway} from "../gateway/appGateway";
 import {Types} from "mongoose";
@@ -86,7 +87,22 @@ export class PostService {
             posts: posts.map((post) => this.mapPost(post, userId)),
         };
     }
+    async getPostsByUsername(username: string, currentUserId?: string) {
+        const user = await UserModel.findOne({ username }).lean();
 
+        if (!user) {
+            throw new Error("User not found");
+        }
+
+        const posts = await PostModel.find({ author: user._id })
+            .sort({ createdAt: -1 })
+            .populate("author", "username displayName avatar")
+            .lean();
+
+        return {
+            posts: posts.map((post) => this.mapPost(post, currentUserId)),
+        };
+    }
     async delete(userId: string, postId: string) {
         const post = await PostModel.findById(postId);
         if (!post) throw new Error("Post not found");

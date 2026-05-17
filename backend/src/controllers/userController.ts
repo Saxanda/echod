@@ -31,11 +31,13 @@ export class UserController {
     @Get("/:username")
     getProfile(
         @Param("username") username: string,
-        @CurrentUser() user: User,
+        @CurrentUser() user: User | null,
     ) {
+        const currentUserId = user ? String((user as any)._id) : "";
+
         return this.userService.findByUsername(
             username,
-            String((user as any)._id),
+            currentUserId,
         );
     }
 

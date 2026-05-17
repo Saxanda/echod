@@ -9,7 +9,7 @@ export default function ProfilePage() {
     const { user: me, updateUser } = useAuth();
     const navigate = useNavigate();
     const isOwn = me?.username === username;
-
+    // const isOwn = profile?.isMe;
     const [profile, setProfile] = useState(null);
     const [posts, setPosts] = useState([]);
     const [editing, setEditing] = useState(false);
@@ -23,17 +23,29 @@ export default function ProfilePage() {
     useEffect(() => {
         setLoading(true);
         setEditing(false);
-        Promise.all([
-            api.get(`/users/${username}`),
-            api.get(`/posts/user/${username}`),
-        ])
-            .then(([{ data: user }, { data: postsData }]) => {
-                setProfile(user);
-                setFollowing(user.followedByMe || false);
-                setPosts(postsData.posts);
-                setEditForm({ displayName: user.displayName, bio: user.bio || "" });
+        setError("");
+
+        api.get(`/users/${username}`)
+            .then(async ({ data: profile }) => {
+                setProfile(profile);
+                setFollowing(profile.isFollowing || false);
+                setEditForm({
+                    displayName: profile.displayName,
+                    bio: profile.bio || "",
+                });
+
+                try {
+                    const { data } = await api.get(`/posts/user/${username}`);
+                    setPosts(data.posts || []);
+                } catch (err) {
+                    console.error("Failed to load posts:", err);
+                    setPosts([]);
+                }
             })
-            .catch(() => setError("User not found"))
+            .catch((err) => {
+                console.error("Failed to load user:", err);
+                setError("User not found");
+            })
             .finally(() => setLoading(false));
     }, [username]);
 
@@ -83,7 +95,7 @@ export default function ProfilePage() {
             {/* Header banner */}
             <div className="profile-header">
                 <img
-                    src={profile.headerPhoto || "/default-header.jpg"}
+                    src={profile.headerImage || "/default-header.jpg"}
                     alt=""
                     className="profile-header-img"
                 />

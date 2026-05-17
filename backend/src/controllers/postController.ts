@@ -1,8 +1,7 @@
 // src/controllers/postController.ts
 import {Service} from "typedi";
 import multer from "multer";
-import { UploadedFile } from "routing-controllers";
-import {Body, Delete, Get, HttpCode, JsonController, Param, Post, QueryParam} from "routing-controllers";
+import {Body, Delete, Get, HttpCode, JsonController, Param, Post, QueryParam, UploadedFile} from "routing-controllers";
 import {PostService} from "../services/postService";
 import {CreatePostDto} from "../dto/post.dto";
 import {CurrentUser} from "../decorators/currentUser";
@@ -43,6 +42,16 @@ export class PostController {
         return this.postService.getMyPosts(String((user as any)._id));
     }
 
+    @Get("/user/:username")
+    getUserPosts(
+        @CurrentUser() user: User | null,
+        @Param("username") username: string,
+    ) {
+        const currentUserId = user ? String((user as any)._id) : undefined;
+
+        return this.postService.getPostsByUsername(username, currentUserId);
+    }
+
     @Get("/liked")
     getLikedPosts(@CurrentUser() user: User) {
         return this.postService.getLikedPosts(String((user as any)._id));
@@ -55,6 +64,7 @@ export class PostController {
     ) {
         return this.postService.toggleLike(String((user as any)._id), postId);
     }
+
     @Delete("/:id/like")
     toggleUnlike(
         @CurrentUser() user: User,
@@ -62,6 +72,7 @@ export class PostController {
     ) {
         return this.postService.toggleLike(String((user as any)._id), postId);
     }
+
     @Delete("/:id")
     deletePost(
         @CurrentUser() user: User,

@@ -20,16 +20,38 @@ export class UserService {
 
         if (!user) throw new Error("User not found");
 
-        const [followersCount, followingCount, isFollowing] = await Promise.all([
-            FollowModel.countDocuments({ following: user._id }),
-            FollowModel.countDocuments({ follower: user._id }),
-            FollowModel.exists({
+        const followersCount = await FollowModel.countDocuments({
+            following: user._id,
+        });
+
+        const followingCount = await FollowModel.countDocuments({
+            follower: user._id,
+        });
+
+        let isFollowing = false;
+
+        if (
+            currentUserId &&
+            Types.ObjectId.isValid(currentUserId)
+        ) {
+            const follow = await FollowModel.exists({
                 follower: new Types.ObjectId(currentUserId),
                 following: user._id,
-            }),
-        ]);
+            });
 
-        return { ...user, followersCount, followingCount, isFollowing: !!isFollowing };
+            isFollowing = !!follow;
+        }
+
+        return {
+            ...user,
+            id: String(user._id),
+            followersCount,
+            followingCount,
+            isFollowing,
+            isMe: currentUserId
+                ? String(user._id) === currentUserId
+                : false,
+        };
     }
 
     async search(query: string, currentUserId: string) {
@@ -56,7 +78,23 @@ export class UserService {
         if (!updated) throw new Error("User not found");
         return updated;
     }
+    async getProfile(currentUserId: string, username: string) {
+        const user = await UserModel.findOne({ username }).lean();
 
+        if (!user) {
+            throw new Error("User not found");
+        }
+
+        return {
+            id: String(user._id),
+            username: user.username,
+            displayName: user.displayName,
+            avatar: user.avatar,
+            headerImage: user.headerImage,
+            bio: user.bio,
+            isMe: String(user._id) === currentUserId,
+        };
+    }
     async toggleFollow(followerId: string, followingId: string) {
         if (followerId === followingId) throw new Error("Cannot follow yourself");
 
@@ -78,14 +116,26 @@ export class UserService {
     }
 
     async getFollowers(userId: string) {
-        return FollowModel.find({ following: new Types.ObjectId(userId) })
+        const followers = await FollowModel.find({
+            following: new Types.ObjectId(userId),
+        })
             .populate("follower", "username displayName avatar")
             .lean();
+
+        return {
+            followers: followers.map((item: any) => item.follower),
+        };
     }
 
     async getFollowing(userId: string) {
-        return FollowModel.find({ follower: new Types.ObjectId(userId) })
+        const following = await FollowModel.find({
+            follower: new Types.ObjectId(userId),
+        })
             .populate("following", "username displayName avatar")
             .lean();
+
+        return {
+            following: following.map((item: any) => item.following),
+        };
     }
 }
