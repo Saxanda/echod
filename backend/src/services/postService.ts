@@ -1,8 +1,9 @@
 // backend/src/services/postService.ts
-import {Service} from "typedi";
+import {Service, Container} from "typedi";
 import {PostModel} from "../models/Post";
 import {UserModel} from "../models/User";
 import {FollowModel} from "../models/Follow";
+import { NotificationService } from "./notificationService";
 import {AppGateway} from "../gateway/appGateway";
 import {Types} from "mongoose";
 
@@ -73,6 +74,18 @@ export class PostService {
         const followerIds = followers.map((f) => String(f.follower));
 
         this.gateway.notifyFollowers(followerIds, mappedPost);
+
+        const notificationService = Container.get(NotificationService);
+
+        await Promise.all(
+            followerIds.map((followerId) =>
+                notificationService.createNewPostNotification(
+                    followerId,
+                    userId,
+                    String(post._id),
+                ),
+            ),
+        );
 
         return mappedPost;
     }

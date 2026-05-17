@@ -1,6 +1,7 @@
 // models/Notification.ts
 import { getModelForClass, prop, Ref } from "@typegoose/typegoose";
 import { User } from "./User";
+import { Post } from "./Post";
 
 export enum NotificationType {
     NEW_POST = "NEW_POST",
@@ -9,24 +10,48 @@ export enum NotificationType {
 }
 
 export class Notification {
-    @prop({ ref: () => User, required: true })
-    public recipient!: Ref<User>;
+    @prop({
+        ref: () => User,
+        required: true,
+    })
+    recipient!: Ref<User>;
 
-    @prop({ ref: () => User, required: true })
-    public sender!: Ref<User>;
+    @prop({
+        ref: () => User,
+        required: true,
+    })
+    sender!: Ref<User>;
 
-    @prop({ required: true, enum: NotificationType })
-    public type!: NotificationType;
+    @prop({
+        type: () => String,
+        enum: Object.values(NotificationType),
+        required: true,
+    })
+    type!: NotificationType;
 
-    @prop({ default: false })
-    public isRead!: boolean;
+    @prop({
+        required: true,
+    })
+    text!: string;
 
-    // e.g. postId for NEW_POST, messageId for NEW_MESSAGE
+    @prop({
+        ref: () => Post,
+    })
+    post?: Ref<Post>;
+
     @prop()
-    public refId?: string;
+    chatUserId?: string;
 
-    @prop({ default: Date.now })
-    public createdAt!: Date;
+    @prop({
+        default: false,
+    })
+    read!: boolean;
+
+    @prop({
+        default: Date.now,
+    })
+    createdAt!: Date;
 }
 
-export const NotificationModel = getModelForClass(Notification);
+export const NotificationModel =
+    getModelForClass(Notification);

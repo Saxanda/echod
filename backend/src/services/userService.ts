@@ -1,9 +1,10 @@
 // src/services/userService.ts
-import { Service } from "typedi";
-import { UserModel } from "../models/User";
-import { FollowModel } from "../models/Follow";
-import { UpdateProfileDto } from "../dto/user.dto";
-import { Types } from "mongoose";
+import {Container, Service} from "typedi";
+import {UserModel} from "../models/User";
+import {FollowModel} from "../models/Follow";
+import {NotificationService} from "./notificationService";
+import {UpdateProfileDto} from "../dto/user.dto";
+import {Types} from "mongoose";
 
 @Service()
 export class UserService {
@@ -14,7 +15,7 @@ export class UserService {
     }
 
     async findByUsername(username: string, currentUserId: string) {
-        const user = await UserModel.findOne({ username })
+        const user = await UserModel.findOne({username})
             .select("-password -emailVerificationToken -passwordResetToken")
             .lean();
 
@@ -58,10 +59,10 @@ export class UserService {
         if (!query) return [];
         return UserModel.find({
             $or: [
-                { username: { $regex: query, $options: "i" } },
-                { displayName: { $regex: query, $options: "i" } },
+                {username: {$regex: query, $options: "i"}},
+                {displayName: {$regex: query, $options: "i"}},
             ],
-            _id: { $ne: new Types.ObjectId(currentUserId) },
+            _id: {$ne: new Types.ObjectId(currentUserId)},
         })
             .select("username displayName avatar")
             .limit(10)
@@ -71,15 +72,16 @@ export class UserService {
     async updateProfile(userId: string, dto: UpdateProfileDto) {
         const updated = await UserModel.findByIdAndUpdate(
             userId,
-            { $set: dto },
-            { returnDocument: "after" }
+            {$set: dto},
+            {returnDocument: "after"}
         ).select("-password -emailVerificationToken -passwordResetToken");
 
         if (!updated) throw new Error("User not found");
         return updated;
     }
+
     async getProfile(currentUserId: string, username: string) {
-        const user = await UserModel.findOne({ username }).lean();
+        const user = await UserModel.findOne({username}).lean();
 
         if (!user) {
             throw new Error("User not found");
@@ -95,8 +97,11 @@ export class UserService {
             isMe: String(user._id) === currentUserId,
         };
     }
+
     async toggleFollow(followerId: string, followingId: string) {
-        if (followerId === followingId) throw new Error("Cannot follow yourself");
+        if (followerId === followingId) {
+            throw new Error("Cannot follow yourself");
+        }
 
         const existing = await FollowModel.findOne({
             follower: new Types.ObjectId(followerId),
@@ -105,14 +110,28 @@ export class UserService {
 
         if (existing) {
             await existing.deleteOne();
-            return { following: false };
+
+            return {
+                following: false,
+            };
         }
 
         await FollowModel.create({
             follower: new Types.ObjectId(followerId),
             following: new Types.ObjectId(followingId),
         });
-        return { following: true };
+
+        const notificationService =
+            Container.get(NotificationService);
+
+        await notificationService.createNewFollowerNotification(
+            followingId,
+            followerId,
+        );
+
+        return {
+            following: true,
+        };
     }
 
     async getFollowers(userId: string) {

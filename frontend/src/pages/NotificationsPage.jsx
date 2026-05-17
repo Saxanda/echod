@@ -1,11 +1,12 @@
+// frontend/src/pages/NotificationsPage.jsx
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
 
 const TYPE_ICONS = {
-    message: "✉️",
-    follow:  "👤",
-    post:    "📝",
+    NEW_MESSAGE: "✉️",
+    NEW_FOLLOWER: "👤",
+    NEW_POST: "📝",
 };
 
 export default function NotificationsPage() {
@@ -15,27 +16,44 @@ export default function NotificationsPage() {
 
     useEffect(() => {
         api.get("/notifications")
-            .then(({ data }) => setNotifications(data))
+            .then(({ data }) => {
+                setNotifications(data.notifications || []);
+            })
+            .catch((err) => {
+                console.error("Failed to load notifications:", err);
+                setNotifications([]);
+            })
             .finally(() => setLoading(false));
     }, []);
 
     const handleClick = async (notif) => {
-        if (!notif.isRead) {
-            await api.patch(`/notifications/${notif.id}/read`).catch(() => {});
+        if (!notif.read) {
+            await api.put(`/notifications/${notif.id}/read`).catch(() => {});
+
             setNotifications((prev) =>
-                prev.map((n) => (n.id === notif.id ? { ...n, isRead: true } : n))
+                prev.map((n) =>
+                    n.id === notif.id ? { ...n, read: true } : n
+                )
             );
         }
-        if (notif.type === "message") navigate(`/messages/${notif.refId}`);
-        else if (notif.type === "post") navigate("/feed");
-        else if (notif.type === "follow") navigate(`/profile/${notif.refUsername}`);
+
+        if (notif.type === "NEW_MESSAGE") {
+            navigate(`/messages/${notif.chatUserId}`);
+        } else if (notif.type === "NEW_POST") {
+            navigate("/feed");
+        } else if (notif.type === "NEW_FOLLOWER") {
+            navigate(`/profile/${notif.sender?.username}`);
+        }
     };
 
-    if (loading) return <div className="page-loading">Loading notifications…</div>;
+    if (loading) {
+        return <div className="page-loading">Loading notifications…</div>;
+    }
 
     return (
         <main className="notifications-page">
             <h1 className="page-title">Notifications</h1>
+
             {notifications.length === 0 ? (
                 <div className="empty-state">
                     <p>No notifications yet.</p>
@@ -45,17 +63,25 @@ export default function NotificationsPage() {
                     {notifications.map((n) => (
                         <li
                             key={n.id}
-                            className={`notification-item ${n.isRead ? "" : "unread"}`}
+                            className={`notification-item ${n.read ? "" : "unread"}`}
                             onClick={() => handleClick(n)}
                         >
-                            <span className="notif-icon">{TYPE_ICONS[n.type] || "🔔"}</span>
+              <span className="notif-icon">
+                {TYPE_ICONS[n.type] || "🔔"}
+              </span>
+
                             <div className="notif-body">
-                                <p>{n.message}</p>
+                                <p>
+                                    <strong>{n.sender?.displayName || "Someone"}</strong>{" "}
+                                    {n.text}
+                                </p>
+
                                 <span className="notif-time">
-                  {new Date(n.createdAt).toLocaleDateString()}
+                  {new Date(n.createdAt).toLocaleString()}
                 </span>
                             </div>
-                            {!n.isRead && <span className="notif-dot" />}
+
+                            {!n.read && <span className="notif-dot" />}
                         </li>
                     ))}
                 </ul>

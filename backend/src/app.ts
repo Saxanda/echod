@@ -9,6 +9,7 @@ import { AuthController } from "./controllers/authController";
 import { AuthMiddleware } from "./middleware/authMiddleware";
 import { PostController } from "./controllers/postController";
 import { UserController } from "./controllers/userController";
+import { NotificationController } from "./controllers/notificationController";
 
 useContainer(Container);
 
@@ -28,7 +29,7 @@ app.use(cookieParser());
 
 useExpressServer(app, {
     routePrefix: "/api",
-    controllers: [AuthController, PostController, UserController],
+    controllers: [AuthController, PostController, UserController, NotificationController],
     middlewares: [AuthMiddleware],
     defaultErrorHandler: true,
     validation: true,
