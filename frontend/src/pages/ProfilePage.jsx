@@ -1,12 +1,12 @@
-import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import {useEffect, useState} from "react";
+import {useNavigate, useParams} from "react-router-dom";
 import api from "../api/axios";
-import { useAuth } from "../context/AuthContext";
+import {useAuth} from "../context/AuthContext";
 import PostCard from "../components/PostCard";
 
 export default function ProfilePage() {
-    const { username } = useParams();
-    const { user: me, updateUser } = useAuth();
+    const {username} = useParams();
+    const {user: me, updateUser} = useAuth();
     const navigate = useNavigate();
     const isOwn = me?.username === username;
     // const isOwn = profile?.isMe;
@@ -26,7 +26,7 @@ export default function ProfilePage() {
         setError("");
 
         api.get(`/users/${username}`)
-            .then(async ({ data: profile }) => {
+            .then(async ({data: profile}) => {
                 setProfile(profile);
                 setFollowing(profile.isFollowing || false);
                 setEditForm({
@@ -35,7 +35,7 @@ export default function ProfilePage() {
                 });
 
                 try {
-                    const { data } = await api.get(`/posts/user/${username}`);
+                    const {data} = await api.get(`/posts/user/${username}`);
                     setPosts(data.posts || []);
                 } catch (err) {
                     console.error("Failed to load posts:", err);
@@ -54,11 +54,11 @@ export default function ProfilePage() {
             if (following) {
                 await api.delete(`/users/${profile.id}/follow`);
                 setFollowing(false);
-                setProfile((p) => ({ ...p, followersCount: p.followersCount - 1 }));
+                setProfile((p) => ({...p, followersCount: p.followersCount - 1}));
             } else {
                 await api.post(`/users/${profile.id}/follow`);
                 setFollowing(true);
-                setProfile((p) => ({ ...p, followersCount: p.followersCount + 1 }));
+                setProfile((p) => ({...p, followersCount: p.followersCount + 1}));
             }
         } catch (err) {
             console.error(err);
@@ -68,19 +68,19 @@ export default function ProfilePage() {
     const handleSaveProfile = async (e) => {
         e.preventDefault();
         setSaving(true);
+        setError("");
+
         try {
-            const formData = new FormData();
-            formData.append("displayname", editForm.displayName);
-            formData.append("bio", editForm.bio);
-            if (editForm.avatarFile) formData.append("avatar", editForm.avatarFile);
-            if (editForm.headerFile) formData.append("header", editForm.headerFile);
-            const { data } = await api.put("/users/me", formData, {
-                headers: { "Content-Type": "multipart/form-data" },
+            const {data} = await api.put("/users/me", {
+                displayName: editForm.displayName,
+                bio: editForm.bio,
             });
+
             setProfile(data);
             updateUser(data);
             setEditing(false);
         } catch (err) {
+            console.error("Failed to save profile:", err);
             setError("Failed to save profile");
         } finally {
             setSaving(false);
@@ -154,14 +154,14 @@ export default function ProfilePage() {
                         <label>Display name</label>
                         <input
                             value={editForm.displayName}
-                            onChange={(e) => setEditForm((f) => ({ ...f, displayName: e.target.value }))}
+                            onChange={(e) => setEditForm((f) => ({...f, displayName: e.target.value}))}
                         />
                     </div>
                     <div className="form-group">
                         <label>Bio</label>
                         <textarea
                             value={editForm.bio}
-                            onChange={(e) => setEditForm((f) => ({ ...f, bio: e.target.value }))}
+                            onChange={(e) => setEditForm((f) => ({...f, bio: e.target.value}))}
                             rows={3}
                         />
                     </div>
@@ -170,7 +170,7 @@ export default function ProfilePage() {
                         <input
                             type="file"
                             accept="image/*"
-                            onChange={(e) => setEditForm((f) => ({ ...f, avatarFile: e.target.files[0] }))}
+                            onChange={(e) => setEditForm((f) => ({...f, avatarFile: e.target.files[0]}))}
                         />
                     </div>
                     <div className="form-group">
@@ -178,7 +178,7 @@ export default function ProfilePage() {
                         <input
                             type="file"
                             accept="image/*"
-                            onChange={(e) => setEditForm((f) => ({ ...f, headerFile: e.target.files[0] }))}
+                            onChange={(e) => setEditForm((f) => ({...f, headerFile: e.target.files[0]}))}
                         />
                     </div>
                     <button type="submit" className="btn-primary" disabled={saving}>
@@ -188,13 +188,13 @@ export default function ProfilePage() {
             )}
 
             {/* Posts */}
-            <div className="posts-list" style={{ marginTop: "1.5rem" }}>
+            <div className="posts-list" style={{marginTop: "1.5rem"}}>
                 {posts.length === 0 ? (
                     <div className="empty-state">
                         <p>No posts yet.</p>
                     </div>
                 ) : (
-                    posts.map((post) => <PostCard key={post.id} post={post} />)
+                    posts.map((post) => <PostCard key={post.id} post={post}/>)
                 )}
             </div>
 
@@ -206,7 +206,7 @@ export default function ProfilePage() {
                             <h2>Followers</h2>
                             <button onClick={() => setShowFollowers(false)} className="modal-close">✕</button>
                         </div>
-                        <FollowersList userId={profile.id} />
+                        <FollowersList userId={profile.id}/>
                     </div>
                 </div>
             )}
@@ -214,12 +214,12 @@ export default function ProfilePage() {
     );
 }
 
-function FollowersList({ userId }) {
+function FollowersList({userId}) {
     const [followers, setFollowers] = useState([]);
     const navigate = useNavigate();
 
     useEffect(() => {
-        api.get(`/users/${userId}/followers`).then(({ data }) => setFollowers(data));
+        api.get(`/users/${userId}/followers`).then(({data}) => setFollowers(data));
     }, [userId]);
 
     return (
@@ -231,7 +231,7 @@ function FollowersList({ userId }) {
                     className="follower-item"
                     onClick={() => navigate(`/profile/${f.username}`)}
                 >
-                    <img src={f.avatar || "/default-avatar.png"} alt="" />
+                    <img src={f.avatar || "/default-avatar.png"} alt=""/>
                     <div>
                         <strong>{f.displayName}</strong>
                         <span>@{f.username}</span>

@@ -1,3 +1,4 @@
+// frontend/src/components/Header.jsx
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 

@@ -72,7 +72,7 @@ export class UserService {
         const updated = await UserModel.findByIdAndUpdate(
             userId,
             { $set: dto },
-            { new: true },
+            { returnDocument: "after" }
         ).select("-password -emailVerificationToken -passwordResetToken");
 
         if (!updated) throw new Error("User not found");
