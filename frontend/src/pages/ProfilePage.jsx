@@ -51,17 +51,19 @@ export default function ProfilePage() {
 
     const handleFollow = async () => {
         try {
-            if (following) {
-                await api.delete(`/users/${profile.id}/follow`);
-                setFollowing(false);
-                setProfile((p) => ({...p, followersCount: p.followersCount - 1}));
-            } else {
-                await api.post(`/users/${profile.id}/follow`);
-                setFollowing(true);
-                setProfile((p) => ({...p, followersCount: p.followersCount + 1}));
-            }
+            const { data } = await api.put(`/users/${profile.id}/follow`);
+
+            setFollowing(data.following);
+
+            setProfile((p) => ({
+                ...p,
+                isFollowing: data.following,
+                followersCount: data.following
+                    ? p.followersCount + 1
+                    : Math.max(0, p.followersCount - 1),
+            }));
         } catch (err) {
-            console.error(err);
+            console.error("Follow error:", err);
         }
     };
 
@@ -214,24 +216,34 @@ export default function ProfilePage() {
     );
 }
 
-function FollowersList({userId}) {
+function FollowersList({ userId }) {
     const [followers, setFollowers] = useState([]);
     const navigate = useNavigate();
 
     useEffect(() => {
-        api.get(`/users/${userId}/followers`).then(({data}) => setFollowers(data));
+        api.get(`/users/${userId}/followers`)
+            .then(({ data }) => {
+                setFollowers(data.followers || []);
+            })
+            .catch((err) => {
+                console.error("Failed to load followers:", err);
+                setFollowers([]);
+            });
     }, [userId]);
 
     return (
         <ul className="followers-list">
-            {followers.length === 0 && <li className="empty-state">No followers yet.</li>}
+            {followers.length === 0 && (
+                <li className="empty-state">No followers yet.</li>
+            )}
+
             {followers.map((f) => (
                 <li
-                    key={f.id}
+                    key={f.id || f._id}
                     className="follower-item"
                     onClick={() => navigate(`/profile/${f.username}`)}
                 >
-                    <img src={f.avatar || "/default-avatar.png"} alt=""/>
+                    <img src={f.avatar || "/default-avatar.png"} alt="" />
                     <div>
                         <strong>{f.displayName}</strong>
                         <span>@{f.username}</span>

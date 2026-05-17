@@ -36,7 +36,14 @@ export class PostController {
             image?.originalname,
         );
     }
-
+    @Get("/search")
+    searchPosts(
+        @CurrentUser() user: User | null,
+        @QueryParam("q") q: string,
+    ) {
+        const currentUserId = user ? String((user as any)._id) : undefined;
+        return this.postService.searchPosts(q, currentUserId);
+    }
     @Get("/me")
     getMyPosts(@CurrentUser() user: User) {
         return this.postService.getMyPosts(String((user as any)._id));

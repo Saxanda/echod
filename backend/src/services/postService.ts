@@ -1,7 +1,7 @@
 // backend/src/services/postService.ts
 import {Service} from "typedi";
 import {PostModel} from "../models/Post";
-import { UserModel } from "../models/User";
+import {UserModel} from "../models/User";
 import {FollowModel} from "../models/Follow";
 import {AppGateway} from "../gateway/appGateway";
 import {Types} from "mongoose";
@@ -11,6 +11,7 @@ export class PostService {
 
     constructor(private gateway: AppGateway) {
     }
+
     private mapPost(post: any, userId?: string) {
         return {
             id: String(post._id),
@@ -24,6 +25,7 @@ export class PostService {
                 : false,
         };
     }
+
     async getFeed(userId: string, search?: string) {
         const follows = await FollowModel.find({
             follower: new Types.ObjectId(userId),
@@ -38,11 +40,11 @@ export class PostService {
         };
 
         if (search) {
-            query.text = { $regex: search, $options: "i" };
+            query.text = {$regex: search, $options: "i"};
         }
 
         const posts = await PostModel.find(query)
-            .sort({ createdAt: -1 })
+            .sort({createdAt: -1})
             .populate("author", "username displayName avatar")
             .lean();
 
@@ -79,7 +81,7 @@ export class PostService {
         const posts = await PostModel.find({
             author: new Types.ObjectId(userId),
         })
-            .sort({ createdAt: -1 })
+            .sort({createdAt: -1})
             .populate("author", "username displayName avatar")
             .lean();
 
@@ -87,15 +89,16 @@ export class PostService {
             posts: posts.map((post) => this.mapPost(post, userId)),
         };
     }
-    async getPostsByUsername(username: string, currentUserId?: string) {
-        const user = await UserModel.findOne({ username }).lean();
 
-        if (!user) {
-            throw new Error("User not found");
+    async searchPosts(query: string, currentUserId?: string) {
+        if (!query) {
+            return {posts: []};
         }
 
-        const posts = await PostModel.find({ author: user._id })
-            .sort({ createdAt: -1 })
+        const posts = await PostModel.find({
+            text: {$regex: query, $options: "i"},
+        })
+            .sort({createdAt: -1})
             .populate("author", "username displayName avatar")
             .lean();
 
@@ -103,6 +106,24 @@ export class PostService {
             posts: posts.map((post) => this.mapPost(post, currentUserId)),
         };
     }
+
+    async getPostsByUsername(username: string, currentUserId?: string) {
+        const user = await UserModel.findOne({username}).lean();
+
+        if (!user) {
+            throw new Error("User not found");
+        }
+
+        const posts = await PostModel.find({author: user._id})
+            .sort({createdAt: -1})
+            .populate("author", "username displayName avatar")
+            .lean();
+
+        return {
+            posts: posts.map((post) => this.mapPost(post, currentUserId)),
+        };
+    }
+
     async delete(userId: string, postId: string) {
         const post = await PostModel.findById(postId);
         if (!post) throw new Error("Post not found");
@@ -156,7 +177,7 @@ export class PostService {
         const posts = await PostModel.find({
             likes: new Types.ObjectId(userId),
         })
-            .sort({ createdAt: -1 })
+            .sort({createdAt: -1})
             .populate("author", "username displayName avatar")
             .lean();
 

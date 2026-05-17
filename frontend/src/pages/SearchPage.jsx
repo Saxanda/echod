@@ -21,8 +21,13 @@ export default function SearchPage() {
             api.get(`/users/search?q=${encodeURIComponent(query)}`),
         ])
             .then(([{ data: p }, { data: u }]) => {
-                setPosts(p.posts);
-                setUsers(u.users);
+                setPosts(p.posts || []);
+                setUsers(u.users || u || []);
+            })
+            .catch((err) => {
+                console.error("Search failed:", err);
+                setPosts([]);
+                setUsers([]);
             })
             .finally(() => setLoading(false));
     }, [query]);
