@@ -16,7 +16,21 @@ export default function ChatPage() {
 
     const bottomRef = useRef(null);
 
-    const myId = String(me?.id || me?._id || "");
+    const normalizeId = (value) => {
+        if (!value) return "";
+        if (typeof value === "string") return value;
+
+        if (value.id) return normalizeId(value.id);
+        if (value._id) return normalizeId(value._id);
+
+        if (value.buffer?.data) {
+            return value.buffer.data
+                .map((b) => b.toString(16).padStart(2, "0"))
+                .join("");
+        }
+
+        return String(value);
+    };
 
     const addMessage = (message) => {
         setMessages((prev) => {
@@ -111,23 +125,27 @@ export default function ChatPage() {
             </div>
 
             <div className="chat-messages">
-                {messages.map((msg) => (
-                    <div
-                        key={msg.id}
-                        className={`message ${
-                            msg.senderId === myId ? "mine" : "theirs"
-                        }`}
-                    >
-                        <p>{msg.text}</p>
+                {messages.map((msg) => {
+                    const senderId = normalizeId(msg.senderId || msg.sender);
+                    const myId = normalizeId(me);
+                    const isMine = senderId === myId;
 
-                        <span className="msg-time">
-              {new Date(msg.createdAt).toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-              })}
-            </span>
-                    </div>
-                ))}
+                    return (
+                        <div
+                            key={msg.id}
+                            className={`message ${isMine ? "mine" : "theirs"}`}
+                        >
+                            <p>{msg.text}</p>
+
+                            <span className="msg-time">
+                                {new Date(msg.createdAt).toLocaleTimeString([], {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                })}
+                            </span>
+                        </div>
+                    );
+                })}
 
                 <div ref={bottomRef} />
             </div>
