@@ -10,7 +10,8 @@ import {User} from "../models/User";
 @Service()
 export class UserController {
 
-    constructor(private userService: UserService) {}
+    constructor(private userService: UserService) {
+    }
 
     // GET /api/users/me
     @Get("/me")
@@ -25,6 +26,11 @@ export class UserController {
         @CurrentUser() user: User,
     ) {
         return this.userService.search(q, String((user as any)._id));
+    }
+
+    @Get("/id/:id")
+    getUserById(@Param("id") id: string) {
+        return this.userService.findById(id);
     }
 
     // GET /api/users/:username

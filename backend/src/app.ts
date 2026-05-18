@@ -2,7 +2,7 @@
 import "reflect-metadata";
 import express from "express";
 import cors from "cors";
-import { useExpressServer, useContainer } from "routing-controllers";
+import { useExpressServer, useContainer, Action } from "routing-controllers";
 import { Container } from "typedi";
 import cookieParser from "cookie-parser";
 import { AuthController } from "./controllers/authController";
@@ -10,6 +10,7 @@ import { AuthMiddleware } from "./middleware/authMiddleware";
 import { PostController } from "./controllers/postController";
 import { UserController } from "./controllers/userController";
 import { NotificationController } from "./controllers/notificationController";
+import { MessageController } from "./controllers/messageController";
 
 useContainer(Container);
 
@@ -29,11 +30,22 @@ app.use(cookieParser());
 
 useExpressServer(app, {
     routePrefix: "/api",
-    controllers: [AuthController, PostController, UserController, NotificationController],
+    controllers: [
+        AuthController,
+        PostController,
+        UserController,
+        NotificationController,
+        MessageController,
+    ],
     middlewares: [AuthMiddleware],
     defaultErrorHandler: true,
     validation: true,
-    currentUserChecker: (action) => action.request.user,
+
+    currentUserChecker: (action: Action) => action.request.user,
+
+    authorizationChecker: async (action: Action) => {
+        return !!action.request.user;
+    },
 });
 
 export default app;

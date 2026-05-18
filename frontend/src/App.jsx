@@ -27,8 +27,11 @@ function Layout() {
   const isAuthPage = AUTH_PATHS.some((p) => location.pathname.startsWith(p));
 
   useEffect(() => {
-    if (user) connectSocket(user.id);
-    else disconnectSocket();
+    if (user?.id) {
+      connectSocket(user.id);
+    } else {
+      disconnectSocket();
+    }
   }, [user]);
 
   return (

@@ -9,7 +9,13 @@ export default function MessagesPage() {
 
     useEffect(() => {
         api.get("/messages/conversations")
-            .then(({ data }) => setConversations(data))
+            .then(({ data }) => {
+                setConversations(data.conversations || []);
+            })
+            .catch((err) => {
+                console.error("Failed to load conversations:", err);
+                setConversations([]);
+            })
             .finally(() => setLoading(false));
     }, []);
 
